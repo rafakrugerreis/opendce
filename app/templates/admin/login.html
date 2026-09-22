@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login — Opendce</title>
+  <meta name="description" content="Acesso ao painel administrativo Opendce.">
+  <link rel="icon" type="image/png" href="/static/images/favicon.png">
+  <link rel="stylesheet" href="/static/css/auth.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+  <div class="auth-bg">
+    <div class="auth-blob"></div>
+    <div class="auth-blob"></div>
+    <div class="auth-blob"></div>
+  </div>
+
+  <div class="auth-card">
+    <div class="auth-logo">
+      <img
+        src="/static/images/logo.png"
+        alt="Opendce"
+        style="height: 50px; width: auto; max-width: 240px; object-fit: contain; margin-bottom: 0.5rem;"
+      />
+      <h1>Painel Admin</h1>
+      <p>Acesso restrito a administradores</p>
+    </div>
+
+    <div id="errorBanner" class="alert-error" style="display:none" role="alert">
+      <i class="fa-solid fa-circle-exclamation"></i>
+      <span id="errorMsg"></span>
+    </div>
+
+    <form id="adminLoginForm" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="cracha">Crachá</label>
+        <div class="input-wrapper">
+          <i class="input-icon fa-solid fa-shield-halved"></i>
+          <input id="cracha" type="text" class="form-input" placeholder="Crachá de administrador" autocomplete="username" required autofocus>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="senha">Senha</label>
+        <div class="input-wrapper">
+          <i class="input-icon fa-solid fa-lock"></i>
+          <input id="senha" type="password" class="form-input has-toggle" placeholder="Senha administrativa" autocomplete="current-password" required>
+          <button type="button" class="toggle-password" id="toggleSenha" aria-label="Mostrar senha">
+            <i class="fa-solid fa-eye" id="toggleIcon"></i>
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-primary" id="submitBtn">
+        <span id="btnText">Acessar painel</span>
+      </button>
+    </form>
+  </div>
+
+  <!-- Modal: troca forçada de senha -->
+  <div class="modal-overlay" id="forceModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title">🔑 Definir nova senha</span>
+      </div>
+      <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1.25rem;">
+        Você está usando uma senha temporária. Defina uma senha pessoal para continuar.
+      </p>
+      <div id="forceError" class="alert-error" style="display:none;margin-bottom:1rem">
+        <i class="fa-solid fa-circle-exclamation"></i><span id="forceErrorMsg"></span>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="novaSenha">Nova Senha</label>
+        <div class="input-wrapper">
+          <i class="input-icon fa-solid fa-lock"></i>
+          <input id="novaSenha" type="password" class="form-input has-toggle" placeholder="Mínimo 8 caracteres" minlength="8">
+          <button type="button" class="toggle-password" id="t3" aria-label="Mostrar"><i class="fa-solid fa-eye" id="i3"></i></button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="confirmarSenha">Confirmar Senha</label>
+        <div class="input-wrapper">
+          <i class="input-icon fa-solid fa-lock-open"></i>
+          <input id="confirmarSenha" type="password" class="form-input has-toggle" placeholder="Repita a senha">
+          <button type="button" class="toggle-password" id="t4" aria-label="Mostrar"><i class="fa-solid fa-eye" id="i4"></i></button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="savePwdBtn" class="btn-primary">Salvar senha</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let _refreshToken = '';
+
+    // Toggle helpers
+    function makeToggle(btnId, iconId, inputId) {
+      document.getElementById(btnId).addEventListener('click', () => {
+        const el = document.getElementById(inputId);
+        el.type = el.type === 'password' ? 'text' : 'password';
+        document.getElementById(iconId).className = el.type === 'text' ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+      });
+    }
+    makeToggle('toggleSenha','toggleIcon','senha');
+    makeToggle('t3','i3','novaSenha');
+    makeToggle('t4','i4','confirmarSenha');
+
+    function showError(msg) {
+      document.getElementById('errorMsg').textContent = msg;
+      document.getElementById('errorBanner').style.display = 'flex';
+    }
+
+    // Login
+    document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      document.getElementById('errorBanner').style.display = 'none';
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      document.getElementById('btnText').innerHTML = '<span class="spinner"></span>Verificando…';
+
+      try {
+        const res = await fetch('/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cracha: document.getElementById('cracha').value.trim(),
+            senha:  document.getElementById('senha').value,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) { showError(data.detail || 'Erro ao autenticar'); return; }
+        localStorage.setItem('access_token',  data.access_token);
+        localStorage.setItem('refresh_token', data.refresh_token);
+        _refreshToken = data.refresh_token;
+        if (!data.password_changed) {
+          document.getElementById('forceModal').classList.add('open');
+        } else {
+          window.location.href = '/admin';
+        }
+      } catch {
+        showError('Falha de conexão. Tente novamente.');
+      } finally {
+        btn.disabled = false;
+        document.getElementById('btnText').textContent = 'Acessar painel';
+      }
+    });
+
+    // Force change password
+    document.getElementById('savePwdBtn').addEventListener('click', async () => {
+      const nova   = document.getElementById('novaSenha').value;
+      const conf   = document.getElementById('confirmarSenha').value;
+      const errEl  = document.getElementById('forceError');
+      const errMsg = document.getElementById('forceErrorMsg');
+
+      errEl.style.display = 'none';
+      if (nova.length < 8) { errMsg.textContent = 'Mínimo 8 caracteres.'; errEl.style.display='flex'; return; }
+      if (nova !== conf)   { errMsg.textContent = 'Senhas não coincidem.'; errEl.style.display='flex'; return; }
+
+      const btn = document.getElementById('savePwdBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Salvando…';
+
+      try {
+        const res = await fetch('/admin/change-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('access_token') },
+          body: JSON.stringify({ nova_senha: nova, confirmar_senha: conf, refresh_token: _refreshToken }),
+        });
+        const data = await res.json();
+        if (!res.ok) { errMsg.textContent = data.detail || 'Erro ao salvar'; errEl.style.display='flex'; return; }
+        localStorage.setItem('access_token',  data.access_token);
+        localStorage.setItem('refresh_token', data.refresh_token);
+        window.location.href = '/admin';
+      } catch {
+        errMsg.textContent = 'Falha de conexão.'; errEl.style.display='flex';
+      } finally {
+        btn.disabled = false; btn.textContent = 'Salvar senha';
+      }
+    });
+  </script>
+</body>
+</html>

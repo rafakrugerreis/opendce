@@ -1,0 +1,1308 @@
+{% extends "base.html" %} {% block title %}Painel Geral — Opendce{% endblock %}
+{% block content %}
+
+<!-- ========================================== -->
+<!-- TAB 1: DASHBOARD / PAINEL                   -->
+<!-- ========================================== -->
+<div class="tab-content active space-y-lg" id="tab-dashboard">
+  <!-- Hero Banner -->
+  <section
+    class="card p-lg shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-md"
+  >
+    <div>
+      <h1
+        class="font-display-lg text-2xl md:text-3xl font-bold text-foreground"
+      >
+        Declaração de Conteúdo Eletrônica
+      </h1>
+      <p class="text-sm text-muted-foreground mt-1">
+        Hospital de Clínicas de Ijuí · Emissão, Assinatura A1 e Transmissão
+        SEFAZ (SVRS/PR · Modelo 99)
+      </p>
+    </div>
+    <div class="flex items-center gap-sm shrink-0 w-full md:w-auto">
+      <button
+        class="btn btn-primary flex-1 md:flex-initial"
+        onclick="switchTab('emission')"
+      >
+        <span class="material-symbols-outlined text-[20px]">add</span>
+        <span>Nova DC-e</span>
+      </button>
+      <button
+        class="btn btn-outline flex-1 md:flex-initial"
+        onclick="consultarStatus()"
+        id="btn-status-sefaz"
+      >
+        <span class="material-symbols-outlined text-[18px]">sync</span>
+        <span>Status SEFAZ</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Metric Cards (Bento Grid) -->
+  <div
+    class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-md"
+    id="stats-grid"
+  >
+    <!-- Total Documentos -->
+    <div
+      class="card p-md flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow"
+    >
+      <span
+        class="label label-muted uppercase tracking-wider"
+        >Total Emitido</span
+      >
+      <div class="mt-sm flex items-end justify-between">
+        <span
+          class="text-2xl lg:text-3xl font-bold font-data-mono text-foreground"
+          id="stat-total"
+          >{{ total_docs }}</span
+        >
+        <span
+          class="material-symbols-outlined text-muted-foreground text-[24px]"
+          >receipt_long</span
+        >
+      </div>
+    </div>
+
+    <!-- Geradas -->
+    <div
+      class="card p-md flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow"
+    >
+      <span
+        class="label label-muted uppercase tracking-wider"
+        >Geradas</span
+      >
+      <div class="mt-sm flex items-end justify-between">
+        <span
+          class="text-2xl lg:text-3xl font-bold font-data-mono text-foreground"
+          id="stat-geradas"
+          >{{ contagem.get('GERADA', 0) }}</span
+        >
+        <span
+          class="material-symbols-outlined text-muted-foreground text-[24px]"
+          >note_add</span
+        >
+      </div>
+    </div>
+
+    <!-- Assinadas -->
+    <div
+      class="card p-md flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow border-t-4 border-t-warning"
+    >
+      <span
+        class="text-xs font-semibold text-warning uppercase tracking-wider"
+        >Assinadas</span
+      >
+      <div class="mt-sm flex items-end justify-between">
+        <span
+          class="text-2xl lg:text-3xl font-bold font-data-mono text-foreground"
+          id="stat-assinadas"
+          >{{ contagem.get('ASSINADA', 0) }}</span
+        >
+        <span
+          class="material-symbols-outlined text-warning text-[24px]"
+          >draw</span
+        >
+      </div>
+    </div>
+
+    <!-- Autorizadas -->
+    <div
+      class="card p-md flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow border-t-4 border-t-success"
+    >
+      <span
+        class="text-xs font-semibold text-success uppercase tracking-wider"
+        >Autorizadas</span
+      >
+      <div class="mt-sm flex items-end justify-between">
+        <span
+          class="text-2xl lg:text-3xl font-bold font-data-mono text-foreground"
+          id="stat-autorizadas"
+          >{{ contagem.get('AUTORIZADA', 0) }}</span
+        >
+        <span
+          class="material-symbols-outlined text-success text-[24px]"
+          >check_circle</span
+        >
+      </div>
+    </div>
+
+    <!-- Rejeitadas -->
+    <div
+      class="card p-md flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow border-t-4 border-t-destructive"
+    >
+      <span
+        class="text-xs font-semibold text-destructive uppercase tracking-wider"
+        >Rejeitadas</span
+      >
+      <div class="mt-sm flex items-end justify-between">
+        <span
+          class="text-2xl lg:text-3xl font-bold font-data-mono text-destructive"
+          id="stat-rejeitadas"
+          >{{ contagem.get('REJEITADA', 0) }}</span
+        >
+        <span
+          class="material-symbols-outlined text-destructive text-[24px]"
+          >cancel</span
+        >
+      </div>
+    </div>
+
+    <!-- Erros de Transmissão -->
+    <div
+      class="card p-md flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow border-t-4 border-t-warning"
+    >
+      <span
+        class="text-xs font-semibold text-warning uppercase tracking-wider"
+        >Erros Transm.</span
+      >
+      <div class="mt-sm flex items-end justify-between">
+        <span
+          class="text-2xl lg:text-3xl font-bold font-data-mono text-foreground"
+          id="stat-erros"
+          >{{ contagem.get('ERRO_TRANSMISSAO', 0) }}</span
+        >
+        <span
+          class="material-symbols-outlined text-warning text-[24px]"
+          >warning</span
+        >
+      </div>
+    </div>
+  </div>
+
+  <!-- Live SEFAZ Status Alert Box -->
+  <div
+    class="hidden alert items-center justify-between transition-all"
+    id="sefaz-status-box"
+    role="status"
+    aria-live="polite"
+  ></div>
+
+  <!-- Recent Documents Card Preview -->
+  <section
+    class="card shadow-sm overflow-hidden"
+  >
+    <div
+      class="p-lg border-b border-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-sm"
+    >
+      <div>
+        <h2
+          class="font-display-lg text-lg font-bold text-foreground"
+        >
+          Últimas Declarações Emitidas
+        </h2>
+        <p class="text-xs text-muted-foreground">
+          Histórico recente de transmissões e emissões
+        </p>
+      </div>
+      <button
+        class="text-primary text-sm font-semibold hover:underline flex items-center gap-xs"
+        onclick="switchTab('management')"
+      >
+        <span>Ver todas as DC-e</span>
+        <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+      </button>
+    </div>
+
+    {% if documentos %}
+    <div class="table-wrapper">
+      <table class="table" id="table-dashboard-preview">
+        <thead>
+          <tr>
+            <th>Nº DC-e</th>
+            <th>Chave de Acesso (44 dígitos)</th>
+            <th>Status</th>
+            <th>cStat SEFAZ</th>
+            <th>Data / Hora</th>
+            <th class="text-right">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for doc in documentos[:8] %}
+          <tr>
+            <td
+              class="font-data-mono font-semibold text-foreground"
+            >
+              {{ "%09d" % doc.numero }}
+            </td>
+            <td
+              class="font-data-mono text-xs text-foreground"
+            >
+              <span class="tracking-wide"
+                >{{ doc.chave[:4] }} {{ doc.chave[4:8] }} ... {{ doc.chave[-4:]
+                }}</span
+              >
+              <button
+                class="ml-1 text-border hover:text-primary transition-colors inline-flex align-middle"
+                onclick="copyChave('{{ doc.chave }}')"
+                title="Copiar chave completa"
+              >
+                <span class="material-symbols-outlined text-[16px]"
+                  >content_copy</span
+                >
+              </button>
+            </td>
+            <td>
+              {% if doc.status == 'AUTORIZADA' %}
+              <span
+                class="badge badge-autorizada"
+              >
+                <span class="material-symbols-outlined text-[14px]"
+                  >check_circle</span
+                >
+                Autorizada
+              </span>
+              {% elif doc.status == 'ASSINADA' %}
+              <span
+                class="badge badge-assinada"
+              >
+                <span class="material-symbols-outlined text-[14px]">draw</span>
+                Assinada
+              </span>
+              {% elif doc.status == 'REJEITADA' %}
+              <span
+                class="badge badge-rejeitada"
+              >
+                <span class="material-symbols-outlined text-[14px]"
+                  >cancel</span
+                >
+                Rejeitada
+              </span>
+              {% elif doc.status == 'ERRO_TRANSMISSAO' %}
+              <span
+                class="badge badge-erro"
+              >
+                <span class="material-symbols-outlined text-[14px]"
+                  >warning</span
+                >
+                Erro Transm.
+              </span>
+              {% else %}
+              <span
+                class="badge badge-gerada"
+              >
+                <span class="material-symbols-outlined text-[14px]"
+                  >note_add</span
+                >
+                {{ doc.status }}
+              </span>
+              {% endif %}
+            </td>
+            <td
+              class="font-data-mono text-xs text-muted-foreground"
+            >
+              {{ doc.c_stat or '—' }}
+            </td>
+            <td
+              class="text-xs text-muted-foreground"
+            >
+              {{ doc.criado_em.strftime('%d/%m/%Y %H:%M') }}
+            </td>
+            <td class="text-right space-x-1">
+              <a
+                href="/dce/{{ doc.id }}"
+                class="badge badge-secondary cursor-pointer"
+              >
+                Detalhes
+              </a>
+              {% if doc.status == 'ASSINADA' %}
+              <button
+                onclick="transmitir({{ doc.id }})"
+                class="badge badge-default cursor-pointer"
+              >
+                Transmitir
+              </button>
+              {% endif %}
+              <a
+                href="/api/dce/{{ doc.id }}/download"
+                class="badge badge-secondary cursor-pointer"
+                title="Download XML Assinado"
+              >
+                XML
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="p-xl text-center">
+      <span class="material-symbols-outlined text-[48px] text-border"
+        >description</span
+      >
+      <p class="text-sm text-muted-foreground mt-sm">
+        Nenhuma DC-e emitida no sistema ainda.
+      </p>
+      <button
+        class="btn btn-primary mt-md"
+        onclick="switchTab('emission')"
+      >
+        <span class="material-symbols-outlined text-[20px]">add</span> Emitir
+        primeira DC-e
+      </button>
+    </div>
+    {% endif %}
+  </section>
+</div>
+
+<!-- ========================================== -->
+<!-- TAB 2: EMISSÃO DE NOVA DC-E (WIZARD GUIADO) -->
+<!-- ========================================== -->
+<div class="tab-content max-w-5xl mx-auto space-y-lg" id="tab-emission">
+  <div>
+    <h1
+      class="font-display-lg text-2xl md:text-3xl font-bold text-foreground"
+    >
+      Emitir Nova DC-e
+    </h1>
+    <p class="text-sm text-muted-foreground mt-1">
+      Preencha os dados da Declaração de Conteúdo Eletrônica para geração e
+      assinatura digital com Certificado A1.
+    </p>
+  </div>
+
+  <!-- Wizard Stepper Indicator -->
+  <div
+    class="card p-md shadow-sm"
+  >
+    <div class="flex items-center justify-between relative max-w-2xl mx-auto">
+      <div
+        class="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-secondary rounded-full z-0"
+      ></div>
+      <div
+        class="absolute left-0 top-1/2 -translate-y-1/2 w-0 h-1 bg-primary rounded-full z-0 transition-all duration-300"
+        id="stepper-progress-bar"
+      ></div>
+
+      <!-- Step 1 Trigger -->
+      <div
+        class="relative z-10 flex flex-col items-center gap-1 cursor-pointer"
+        onclick="goToStep(1)"
+      >
+        <div
+          class="stepper-bullet stepper-bullet-active ring-4 ring-card"
+          id="step-bullet-1"
+        >
+          1
+        </div>
+        <span
+          class="text-xs font-bold text-primary whitespace-nowrap"
+          id="step-label-1"
+          >Destinatário</span
+        >
+      </div>
+
+      <!-- Step 2 Trigger -->
+      <div
+        class="relative z-10 flex flex-col items-center gap-1 cursor-pointer"
+        onclick="goToStep(2)"
+      >
+        <div
+          class="stepper-bullet ring-4 ring-card"
+          id="step-bullet-2"
+        >
+          2
+        </div>
+        <span
+          class="text-xs font-semibold text-muted-foreground whitespace-nowrap"
+          id="step-label-2"
+          >Itens</span
+        >
+      </div>
+
+      <!-- Step 3 Trigger -->
+      <div
+        class="relative z-10 flex flex-col items-center gap-1 cursor-pointer"
+        onclick="goToStep(3)"
+      >
+        <div
+          class="stepper-bullet ring-4 ring-card"
+          id="step-bullet-3"
+        >
+          3
+        </div>
+        <span
+          class="text-xs font-semibold text-muted-foreground whitespace-nowrap"
+          id="step-label-3"
+          >Transporte</span
+        >
+      </div>
+
+      <!-- Step 4 Trigger -->
+      <div
+        class="relative z-10 flex flex-col items-center gap-1 cursor-pointer"
+        onclick="goToStep(4)"
+      >
+        <div
+          class="stepper-bullet ring-4 ring-card"
+          id="step-bullet-4"
+        >
+          4
+        </div>
+        <span
+          class="text-xs font-semibold text-muted-foreground whitespace-nowrap"
+          id="step-label-4"
+          >Revisão</span
+        >
+      </div>
+    </div>
+  </div>
+
+  <!-- Form Wrapper -->
+  <form id="form-wizard-dce" onsubmit="submitDce(event)">
+    <!-- STEP 1: DESTINATÁRIO -->
+    <div
+      class="wizard-step active card shadow-sm overflow-hidden"
+      id="wizard-step-1"
+    >
+      <div
+        class="p-lg border-b border-border"
+      >
+        <h2
+          class="font-display-lg text-lg font-bold text-foreground flex items-center gap-sm"
+        >
+          <span class="material-symbols-outlined text-primary">person</span>
+          <span>1. Identificação e Endereço do Destinatário</span>
+        </h2>
+        <p class="text-xs text-muted-foreground mt-1">
+          Informe os dados completos de quem receberá o material hospitalar ou
+          mercadoria.
+        </p>
+      </div>
+
+      <div class="p-lg space-y-md">
+        <!-- Datalist para autocomplete de fornecedores do banco -->
+        <datalist id="fornecedores-datalist"></datalist>
+
+        <!-- CPF/CNPJ and Name -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-md items-end">
+          <div class="md:col-span-5">
+            <label
+              for="dest_doc"
+              class="label label-muted uppercase tracking-wider mb-xs"
+            >
+              CPF ou CNPJ do Destinatário *
+            </label>
+            <input
+              type="text"
+              id="dest_doc"
+              name="destinatario_documento"
+              required
+              autocomplete="off"
+              oninput="buscarFornecedorPorDoc(this)"
+              placeholder="00.000.000/0000-00"
+              class="input font-data-mono"
+            />
+          </div>
+          <div class="md:col-span-7">
+            <label
+              for="dest_nome"
+              class="label label-muted uppercase tracking-wider mb-xs"
+            >
+              Nome Completo ou Razão Social
+            </label>
+            <input
+              type="text"
+              id="dest_nome"
+              name="destinatario_nome"
+              list="fornecedores-datalist"
+              autocomplete="off"
+              oninput="buscarFornecedorAutocomplete(this)"
+              placeholder="Ex: Digite o nome do fornecedor ou destinatário..."
+              class="input"
+            />
+          </div>
+        </div>
+
+        <!-- Address Line 1 -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-md">
+          <div class="md:col-span-4">
+            <label
+              for="end_cep"
+              class="label label-muted uppercase tracking-wider mb-xs"
+            >
+              CEP *
+            </label>
+            <div class="relative">
+              <input
+                type="text"
+                id="end_cep"
+                name="cep"
+                required
+                placeholder="98700-000"
+                maxlength="9"
+                onblur="buscarCep(this.value)"
+                class="input font-data-mono"
+              />
+              <span
+                class="material-symbols-outlined absolute right-sm top-1/2 -translate-y-1/2 text-border text-[18px]"
+                >place</span
+              >
+            </div>
+          </div>
+          <div class="md:col-span-6">
+            <label
+              for="end_logr"
+              class="label label-muted uppercase tracking-wider mb-xs"
+            >
+              Logradouro (Rua, Av, etc.) *
+            </label>
+            <input
+              type="text"
+              id="end_logr"
+              name="logradouro"
+              required
+              placeholder="Ex: Av. Coronel Diniz"
+              class="input"
+            />
+          </div>
+          <div class="md:col-span-2">
+            <label
+              for="end_nro"
+              class="label label-muted uppercase tracking-wider mb-xs"
+            >
+              Número *
+            </label>
+            <input
+              type="text"
+              id="end_nro"
+              name="numero"
+              required
+              placeholder="123"
+              class="input font-data-mono"
+            />
+          </div>
+        </div>
+
+        <!-- Address Line 2 -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-md">
+          <div class="md:col-span-4">
+            <label
+              for="end_bairro"
+              class="label label-muted uppercase tracking-wider mb-xs"
+            >
+              Bairro *
+            </label>
+            <input
+              type="text"
+              id="end_bairro"
+              name="bairro"
+              required
+              placeholder="Centro"
+              class="input"
+            />
+          </div>
+          <div class="md:col-span-4">
+            <label
+              for="end_mun"
+              class="label label-muted uppercase tracking-wider mb-xs"
+            >
+              Município *
+            </label>
+            <input
+              type="text"
+              id="end_mun"
+              name="municipio"
+              required
+              placeholder="Ijuí"
+              class="input"
+            />
+          </div>
+          <div class="md:col-span-2">
+            <label
+              for="end_ibge"
+              class="label label-muted uppercase tracking-wider mb-xs"
+            >
+              Cód. IBGE *
+            </label>
+            <input
+              type="text"
+              id="end_ibge"
+              name="municipio_ibge"
+              required
+              maxlength="7"
+              placeholder="4310207"
+              value="4310207"
+              class="input font-data-mono"
+            />
+          </div>
+          <div class="md:col-span-2">
+            <label
+              for="end_uf"
+              class="label label-muted uppercase tracking-wider mb-xs"
+            >
+              UF *
+            </label>
+            <select
+              id="end_uf"
+              name="uf"
+              required
+              class="input"
+            >
+              <option value="RS" selected>RS</option>
+              <option value="SC">SC</option>
+              <option value="PR">PR</option>
+              <option value="SP">SP</option>
+              <option value="RJ">RJ</option>
+              <option value="MG">MG</option>
+              <option value="DF">DF</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="p-md border-t border-border bg-background/50 flex justify-end"
+      >
+        <button
+          type="button"
+          class="btn btn-primary"
+          onclick="goToStep(2)"
+        >
+          <span>Próximo: Itens</span>
+          <span class="material-symbols-outlined text-[18px]"
+            >arrow_forward</span
+          >
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 2: ITENS DA DECLARAÇÃO -->
+    <div
+      class="wizard-step card hidden overflow-hidden"
+      id="wizard-step-2"
+    >
+      <div
+        class="p-lg border-b border-border flex justify-between items-center"
+      >
+        <div>
+          <h2
+            class="font-display-lg text-lg font-bold text-foreground flex items-center gap-sm"
+          >
+            <span class="material-symbols-outlined text-primary"
+              >inventory_2</span
+            >
+            <span>2. Itens, Mercadorias ou Bens Declarados</span>
+          </h2>
+          <p class="text-xs text-muted-foreground mt-1">
+            Adicione os produtos que compõem esta remessa.
+          </p>
+        </div>
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm h-[38px] px-md flex items-center gap-1"
+          onclick="addItem()"
+        >
+          <span class="material-symbols-outlined text-[16px]">add</span>
+          Adicionar Item
+        </button>
+      </div>
+
+      <div class="p-lg space-y-md">
+        <!-- Datalist para autocomplete de produtos do banco -->
+        <datalist id="produtos-datalist"></datalist>
+
+        <!-- Container dos Itens Dinâmicos -->
+        <div id="itens-container" class="space-y-sm">
+          <!-- Item Inicial 1 -->
+          <div
+            class="item-row card p-md relative"
+            data-item="1"
+          >
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-md items-end">
+              <div class="md:col-span-5">
+                <label
+                  class="label label-muted uppercase tracking-wider mb-xs"
+                >
+                  Descrição do Item #1 *
+                </label>
+                <input
+                  type="text"
+                  name="item_desc_1"
+                  required
+                  list="produtos-datalist"
+                  autocomplete="off"
+                  oninput="buscarProdutoAutocomplete(this, 1)"
+                  onchange="resolverNcmItem(this, 1)"
+                  placeholder="Digite o nome do produto cadastrado..."
+                  class="input"
+                />
+              </div>
+              <div class="md:col-span-2">
+                <label
+                  class="label label-muted uppercase tracking-wider mb-xs"
+                >
+                  Grupo NCM (2 Dígitos) *
+                </label>
+                <input
+                  type="text"
+                  name="item_ncm_1"
+                  placeholder="Ex: 90"
+                  value="90"
+                  maxlength="8"
+                  class="input font-data-mono"
+                />
+              </div>
+              <div class="md:col-span-2">
+                <label
+                  class="label label-muted uppercase tracking-wider mb-xs"
+                >
+                  Quantidade *
+                </label>
+                <input
+                  type="number"
+                  name="item_qtd_1"
+                  required
+                  min="0.0001"
+                  step="any"
+                  value="1"
+                  oninput="calculateItemTotals()"
+                  class="input font-data-mono"
+                />
+              </div>
+              <div class="md:col-span-2">
+                <label
+                  class="label label-muted uppercase tracking-wider mb-xs"
+                >
+                  Valor Unitário (R$) *
+                </label>
+                <input
+                  type="number"
+                  name="item_vun_1"
+                  required
+                  min="0.01"
+                  step="0.01"
+                  placeholder="0.00"
+                  oninput="calculateItemTotals()"
+                  class="input font-data-mono"
+                />
+              </div>
+              <div class="md:col-span-1 flex justify-end">
+                <button
+                  type="button"
+                  class="btn btn-destructive btn-icon"
+                  onclick="removeItem(this)"
+                  title="Remover item"
+                >
+                  <span class="material-symbols-outlined text-[20px]"
+                    >delete</span
+                  >
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Totalizador de Itens -->
+        <div
+          class="card p-md flex justify-between items-center text-sm font-semibold"
+        >
+          <span class="text-foreground"
+            >Resumo da Carga:</span
+          >
+          <div class="flex items-center gap-lg">
+            <span class="text-xs text-muted-foreground"
+              >Total de Itens:
+              <strong
+                id="summary-items-count"
+                class="text-foreground font-data-mono"
+                >1</strong
+              ></span
+            >
+            <span class="text-sm font-bold text-primary"
+              >Valor Total:
+              <strong id="summary-total-value" class="font-data-mono text-base"
+                >R$ 0,00</strong
+              ></span
+            >
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="p-md border-t border-border bg-background/50 flex justify-between"
+      >
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onclick="goToStep(1)"
+        >
+          <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+          Voltar
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          onclick="goToStep(3)"
+        >
+          <span>Próximo: Transporte</span>
+          <span class="material-symbols-outlined text-[18px]"
+            >arrow_forward</span
+          >
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 3: TRANSPORTE E OBSERVAÇÕES -->
+    <div
+      class="wizard-step card hidden overflow-hidden"
+      id="wizard-step-3"
+    >
+      <div
+        class="p-lg border-b border-border"
+      >
+        <h2
+          class="font-display-lg text-lg font-bold text-foreground flex items-center gap-sm"
+        >
+          <span class="material-symbols-outlined text-primary"
+            >local_shipping</span
+          >
+          <span>3. Modalidade de Transporte e Informações Complementares</span>
+        </h2>
+        <p class="text-xs text-muted-foreground mt-1">
+          Defina como a carga será transportada e adicione observações fiscais
+          se necessário.
+        </p>
+      </div>
+
+      <div class="p-lg space-y-md">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-md">
+          <!-- Modalidade -->
+          <div class="md:col-span-6">
+            <label
+              for="mod_trans"
+              class="label label-muted uppercase tracking-wider mb-xs"
+            >
+              Modalidade de Frete / Transporte *
+            </label>
+            <select
+              id="mod_trans"
+              name="modalidade_transporte"
+              class="input"
+            >
+              <option value="0">
+                0 — Empresa Brasileira de Correios e Telégrafos (ECT)
+              </option>
+              <option value="1" selected>
+                1 — Transporte Próprio (Hospital de Clínicas de Ijuí)
+              </option>
+              <option value="2">
+                2 — Transportadora Terceirizada (Requer CNPJ)
+              </option>
+            </select>
+          </div>
+
+          <!-- CNPJ Transportadora (se modalidade == 2) -->
+          <div class="md:col-span-6 hidden" id="transp-cnpj-group">
+            <label
+              for="cnpj_transp"
+              class="label label-muted uppercase tracking-wider mb-xs"
+            >
+              CNPJ da Transportadora *
+            </label>
+            <input
+              type="text"
+              id="cnpj_transp"
+              name="cnpj_transportadora"
+              placeholder="00.000.000/0000-00"
+              class="input font-data-mono"
+            />
+          </div>
+
+          <!-- Informações Complementares -->
+          <div class="md:col-span-12">
+            <label
+              for="inf_cpl"
+              class="label label-muted uppercase tracking-wider mb-xs"
+            >
+              Informações Complementares / Observações de Interesse do Fisco
+            </label>
+            <textarea
+              id="inf_cpl"
+              name="informacoes_complementares"
+              rows="3"
+              placeholder="Ex: Material para manutenção de equipamentos médicos. Não sujeito a tributação conforme normas vigentes."
+              class="input p-sm"
+            ></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="p-md border-t border-border bg-background/50 flex justify-between"
+      >
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onclick="goToStep(2)"
+        >
+          <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+          Voltar
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          onclick="goToStep(4)"
+        >
+          <span>Revisar e Finalizar</span>
+          <span class="material-symbols-outlined text-[18px]"
+            >arrow_forward</span
+          >
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 4: REVISÃO E EMISSÃO FINAL -->
+    <div
+      class="wizard-step card hidden overflow-hidden"
+      id="wizard-step-4"
+    >
+      <div
+        class="p-lg border-b border-border"
+      >
+        <h2
+          class="font-display-lg text-lg font-bold text-foreground flex items-center gap-sm"
+        >
+          <span class="material-symbols-outlined text-primary">verified</span>
+          <span>4. Conferência, Assinatura Digital e Emissão</span>
+        </h2>
+        <p class="text-xs text-muted-foreground mt-1">
+          Verifique os dados consolidados antes de assinar e gerar o XML da
+          DC-e.
+        </p>
+      </div>
+
+      <div class="p-lg space-y-md">
+        <!-- Review Summary Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+          <div
+            class="card p-md"
+          >
+            <h3
+              class="label label-muted uppercase tracking-wider mb-sm"
+            >
+              Emissor (HCI)
+            </h3>
+            <p class="font-semibold text-sm text-foreground">
+              ASSOCIAÇÃO HOSPITAL DE CARIDADE IJUI
+            </p>
+            <p class="font-data-mono text-xs text-muted-foreground">
+              CNPJ: 90.730.508/0001-38 · Ijuí / RS
+            </p>
+            <p class="text-xs text-border mt-1">
+              Certificado: A1 ICP-Brasil (Carregado)
+            </p>
+          </div>
+
+          <div
+            class="card p-md"
+          >
+            <h3
+              class="label label-muted uppercase tracking-wider mb-sm"
+            >
+              Destinatário
+            </h3>
+            <p
+              class="font-semibold text-sm text-foreground"
+              id="review-dest-nome"
+            >
+              Nome não informado
+            </p>
+            <p class="font-data-mono text-xs text-muted-foreground" id="review-dest-doc">
+              Doc: —
+            </p>
+            <p class="text-xs text-border mt-1" id="review-dest-end">
+              Endereço: —
+            </p>
+          </div>
+        </div>
+
+        <div
+          class="alert items-center justify-between border-primary/40"
+        >
+          <div class="flex items-center gap-sm">
+            <span
+              class="material-symbols-outlined text-primary text-[28px]"
+              >lock</span
+            >
+            <div>
+              <p class="font-semibold text-sm text-primary">
+                Assinatura Digital Automática
+              </p>
+              <p class="text-xs text-muted-foreground">
+                O XML será assinado digitalmente com SHA-1 / RSA e validado
+                contra o Schema XSD v1.00.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Error Box -->
+        <div
+          class="hidden alert alert-destructive"
+          id="wizard-form-destructive"
+          role="alert"
+        ></div>
+      </div>
+
+      <div
+        class="p-md border-t border-border bg-background/50 flex justify-between"
+      >
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onclick="goToStep(3)"
+        >
+          <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+          Voltar
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          id="btn-submit-wizard"
+        >
+          <span class="material-symbols-outlined text-[18px]"
+            >check_circle</span
+          >
+          <span>Emitir e Assinar DC-e</span>
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- ========================================== -->
+<!-- TAB 3: GESTÃO DE DOCUMENTOS (TABELA RICA)   -->
+<!-- ========================================== -->
+<div class="tab-content space-y-md" id="tab-management">
+  <div
+    class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-sm"
+  >
+    <div>
+      <h1
+        class="font-display-lg text-2xl md:text-3xl font-bold text-foreground"
+      >
+        Gestão de Documentos
+      </h1>
+      <p class="text-sm text-muted-foreground mt-1">
+        Listagem completa, filtros avançados e transmissão para a SEFAZ.
+      </p>
+    </div>
+    <button
+      class="btn btn-primary"
+      onclick="switchTab('emission')"
+    >
+      <span class="material-symbols-outlined text-[20px]">add</span>
+      <span>Nova DC-e</span>
+    </button>
+  </div>
+
+  <!-- Filters Bar -->
+  <div
+    class="card p-md shadow-sm grid grid-cols-1 sm:grid-cols-12 gap-md items-center"
+  >
+    <div class="sm:col-span-6 relative">
+      <span
+        class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-muted-foreground text-[18px]"
+        >search</span
+      >
+      <input
+        type="text"
+        id="filter-chave-table"
+        placeholder="Filtrar por Chave de Acesso ou Nº..."
+        class="input h-[40px] pl-9 pr-sm"
+        oninput="filterTable(this.value)"
+      />
+    </div>
+
+    <div class="sm:col-span-4">
+      <select
+        id="filter-status-select"
+        class="input h-[40px] px-sm"
+        onchange="filterStatus(this.value)"
+      >
+        <option value="">Todos os Status</option>
+        <option value="AUTORIZADA">Autorizadas</option>
+        <option value="ASSINADA">Assinadas (Aguardando Envio)</option>
+        <option value="GERADA">Geradas</option>
+        <option value="REJEITADA">Rejeitadas</option>
+        <option value="ERRO_TRANSMISSAO">Erros de Transmissão</option>
+      </select>
+    </div>
+
+    <div class="sm:col-span-2 flex justify-end">
+      <button
+        class="btn btn-secondary btn-sm w-full h-[40px]"
+        onclick="window.location.reload()"
+      >
+        <span class="material-symbols-outlined text-[16px]">refresh</span>
+        Atualizar
+      </button>
+    </div>
+  </div>
+
+  <!-- Documents Full Table -->
+  <div
+    class="card shadow-sm overflow-hidden"
+  >
+    {% if documentos %}
+    <div class="table-wrapper">
+      <table class="table" id="full-dce-table">
+        <thead>
+          <tr>
+            <th>Nº DC-e</th>
+            <th>Chave de Acesso (44 dígitos)</th>
+            <th>Status</th>
+            <th>cStat / Motivo</th>
+            <th>Emissão / Usuário</th>
+            <th class="text-right">Ações Rápidas</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for doc in documentos %}
+          <tr
+            class="doc-item-row"
+            data-chave="{{ doc.chave }}"
+            data-numero="{{ doc.numero }}"
+            data-status="{{ doc.status }}"
+          >
+            <td
+              class="font-data-mono font-bold text-foreground"
+            >
+              {{ "%09d" % doc.numero }}
+            </td>
+            <td
+              class="font-data-mono text-xs text-foreground"
+            >
+              <span class="tracking-wider"
+                >{{ doc.chave[:4] }} {{ doc.chave[4:8] }} {{ doc.chave[8:12] }}
+                {{ doc.chave[12:16] }} {{ doc.chave[16:20] }} {{
+                doc.chave[20:24] }} {{ doc.chave[24:28] }} {{ doc.chave[28:32]
+                }} {{ doc.chave[32:36] }} {{ doc.chave[36:40] }} {{
+                doc.chave[40:44] }}</span
+              >
+              <button
+                class="ml-1 text-border hover:text-primary transition-colors inline-flex align-middle"
+                onclick="copyChave('{{ doc.chave }}')"
+                title="Copiar chave completa"
+              >
+                <span class="material-symbols-outlined text-[16px]"
+                  >content_copy</span
+                >
+              </button>
+            </td>
+            <td>
+              {% if doc.status == 'AUTORIZADA' %}
+              <span
+                class="badge badge-autorizada"
+              >
+                <span class="material-symbols-outlined text-[14px]"
+                  >check_circle</span
+                >
+                Autorizada
+              </span>
+              {% elif doc.status == 'ASSINADA' %}
+              <span
+                class="badge badge-assinada"
+              >
+                <span class="material-symbols-outlined text-[14px]">draw</span>
+                Assinada
+              </span>
+              {% elif doc.status == 'REJEITADA' %}
+              <span
+                class="badge badge-rejeitada"
+              >
+                <span class="material-symbols-outlined text-[14px]"
+                  >cancel</span
+                >
+                Rejeitada
+              </span>
+              {% elif doc.status == 'ERRO_TRANSMISSAO' %}
+              <span
+                class="badge badge-erro"
+              >
+                <span class="material-symbols-outlined text-[14px]"
+                  >warning</span
+                >
+                Erro Transm.
+              </span>
+              {% else %}
+              <span
+                class="badge badge-gerada"
+              >
+                <span class="material-symbols-outlined text-[14px]"
+                  >note_add</span
+                >
+                {{ doc.status }}
+              </span>
+              {% endif %}
+            </td>
+            <td
+              class="text-xs text-muted-foreground"
+            >
+              <span
+                class="font-data-mono font-semibold text-foreground"
+                >{{ doc.c_stat or '—' }}</span
+              >
+              {% if doc.motivo %}<span
+                class="block text-[11px] truncate max-w-xs text-muted-foreground"
+                >{{ doc.motivo }}</span
+              >{% endif %}
+            </td>
+            <td
+              class="text-xs text-muted-foreground"
+            >
+              <div>{{ doc.criado_em.strftime('%d/%m/%Y %H:%M') }}</div>
+              {% if doc.usuario %}
+              <div
+                class="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5"
+              >
+                <span class="material-symbols-outlined text-[13px] text-primary"
+                  >person</span
+                >
+                <span class="truncate max-w-[130px] font-medium text-foreground"
+                  >{{ doc.usuario }}</span
+                >
+              </div>
+              {% endif %}
+            </td>
+            <td class="text-right space-x-1">
+              <a
+                href="/dce/{{ doc.id }}"
+                class="badge badge-secondary cursor-pointer"
+              >
+                Ver
+              </a>
+              {% if doc.status == 'ASSINADA' %}
+              <button
+                onclick="transmitir({{ doc.id }})"
+                class="badge badge-default cursor-pointer"
+              >
+                Transmitir
+              </button>
+              {% endif %}
+              <a
+                href="/api/dce/{{ doc.id }}/download"
+                class="badge badge-secondary cursor-pointer"
+              >
+                XML
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="p-xl text-center">
+      <p class="text-sm text-muted-foreground">
+        Nenhum documento encontrado.
+      </p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestão de Usuários — Opendce Admin</title>
+  <meta name="description" content="Painel de gerenciamento de usuários do sistema Opendce.">
+  <link rel="icon" type="image/png" href="/static/images/favicon.png">
+  <link rel="stylesheet" href="/static/css/auth.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body style="display:block;overflow:auto;">
+
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <a href="/admin" style="display:flex;align-items:center;text-decoration:none;">
+          <img src="/static/images/logo.png" alt="Opendce" style="height: 30px; max-width: 180px; object-fit: contain;">
+        </a>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="/" class="sidebar-item">
+          <i class="fa-solid fa-gauge"></i>
+          <span class="sidebar-label">Dashboard</span>
+        </a>
+        <a href="/admin" class="sidebar-item active">
+          <i class="fa-solid fa-users"></i>
+          <span class="sidebar-label">Usuários</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-avatar" id="adminAvatar">A</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name" id="adminName">{{ admin.nome }}</div>
+            <div class="sidebar-user-role">Administrador</div>
+          </div>
+          <button class="btn-logout" id="logoutBtn" title="Sair">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="main-content">
+      <header class="topbar">
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <button id="sidebarToggle" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1rem;" aria-label="Toggle sidebar">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <span class="topbar-title">Gestão de Usuários</span>
+        </div>
+        <button class="topbar-btn" id="newUserBtn">
+          <i class="fa-solid fa-user-plus"></i>
+          Novo Usuário
+        </button>
+      </header>
+
+      <div class="content-area">
+        <!-- Stats -->
+        <div class="stats-row" id="statsRow">
+          <div class="stat-card">
+            <span class="stat-icon">👥</span>
+            <span class="stat-label">Total</span>
+            <span class="stat-value" id="statTotal">—</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon" style="color:#34d399;">✅</span>
+            <span class="stat-label">Ativos</span>
+            <span class="stat-value" id="statAtivos">—</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon" style="color:#f87171;">🚫</span>
+            <span class="stat-label">Inativos</span>
+            <span class="stat-value" id="statInativos">—</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon" style="color:#a78bfa;">🛡️</span>
+            <span class="stat-label">Admins</span>
+            <span class="stat-value" id="statAdmins">—</span>
+          </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+          <div class="search-wrapper">
+            <i class="search-icon fa-solid fa-magnifying-glass"></i>
+            <input type="text" class="search-input" id="searchInput" placeholder="Buscar por nome ou crachá…">
+          </div>
+          <select class="filter-select" id="statusFilter">
+            <option value="">Todos</option>
+            <option value="ativo">Ativos</option>
+            <option value="inativo">Inativos</option>
+          </select>
+        </div>
+
+        <!-- Table -->
+        <div class="table-wrapper">
+          <table class="data-table" id="usersTable">
+            <thead>
+              <tr>
+                <th>Crachá</th>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Perfil</th>
+                <th>Status</th>
+                <th>Senha</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="usersBody">
+              <tr><td colspan="7" class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i><p>Carregando…</p></td></tr>
+            </tbody>
+          </table>
+          <div class="pagination" id="pagination" style="display:none;">
+            <span class="pagination-info" id="paginationInfo"></span>
+            <div class="pagination-controls" id="paginationControls"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Criar usuário -->
+  <div class="modal-overlay" id="createModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title">👤 Novo Usuário</span>
+        <button class="modal-close" data-close="createModal">✕</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="c_nome">Nome completo</label>
+        <div class="input-wrapper"><i class="input-icon fa-solid fa-user"></i>
+          <input id="c_nome" type="text" class="form-input" placeholder="Nome do usuário">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="c_cracha">Crachá (somente números)</label>
+        <div class="input-wrapper"><i class="input-icon fa-solid fa-id-badge"></i>
+          <input id="c_cracha" type="text" class="form-input" placeholder="Ex: 1234" pattern="\d+">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="c_email">Email (opcional)</label>
+        <div class="input-wrapper"><i class="input-icon fa-solid fa-envelope"></i>
+          <input id="c_email" type="email" class="form-input" placeholder="email@empresa.com">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="c_senha">Senha temporária</label>
+        <div class="input-wrapper"><i class="input-icon fa-solid fa-lock"></i>
+          <input id="c_senha" type="password" class="form-input has-toggle" placeholder="Mínimo 8 caracteres">
+          <button type="button" class="toggle-password" id="tc1"><i class="fa-solid fa-eye" id="tci1"></i></button>
+        </div>
+      </div>
+      <div class="form-group" style="flex-direction:row;align-items:center;gap:0.75rem;">
+        <input type="checkbox" id="c_admin" style="width:16px;height:16px;accent-color:var(--accent-2);cursor:pointer;">
+        <label for="c_admin" style="font-size:0.85rem;cursor:pointer;">Conceder permissão de administrador</label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" data-close="createModal">Cancelar</button>
+        <button class="btn-primary" id="createSubmitBtn">Criar usuário</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Editar usuário -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title">✏️ Editar Usuário</span>
+        <button class="modal-close" data-close="editModal">✕</button>
+      </div>
+      <input type="hidden" id="e_id">
+      <div class="form-group">
+        <label class="form-label" for="e_nome">Nome</label>
+        <div class="input-wrapper"><i class="input-icon fa-solid fa-user"></i>
+          <input id="e_nome" type="text" class="form-input">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="e_email">Email</label>
+        <div class="input-wrapper"><i class="input-icon fa-solid fa-envelope"></i>
+          <input id="e_email" type="email" class="form-input" placeholder="Opcional">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="e_senha">Nova senha (deixe em branco para manter)</label>
+        <div class="input-wrapper"><i class="input-icon fa-solid fa-lock"></i>
+          <input id="e_senha" type="password" class="form-input has-toggle" placeholder="Opcional">
+          <button type="button" class="toggle-password" id="te1"><i class="fa-solid fa-eye" id="tei1"></i></button>
+        </div>
+      </div>
+      <div class="form-group" style="flex-direction:row;align-items:center;gap:0.75rem;">
+        <input type="checkbox" id="e_active" style="width:16px;height:16px;accent-color:#34d399;cursor:pointer;">
+        <label for="e_active" style="font-size:0.85rem;cursor:pointer;">Usuário ativo</label>
+      </div>
+      <div class="form-group" style="flex-direction:row;align-items:center;gap:0.75rem;">
+        <input type="checkbox" id="e_admin" style="width:16px;height:16px;accent-color:var(--accent-2);cursor:pointer;">
+        <label for="e_admin" style="font-size:0.85rem;cursor:pointer;">Administrador</label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" data-close="editModal">Cancelar</button>
+        <button class="btn-primary" id="editSubmitBtn">Salvar alterações</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Reset senha -->
+  <div class="modal-overlay" id="resetModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title">🔑 Resetar Senha</span>
+        <button class="modal-close" data-close="resetModal">✕</button>
+      </div>
+      <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1.25rem;">
+        O usuário deverá trocar a senha no próximo acesso.
+      </p>
+      <input type="hidden" id="r_id">
+      <div class="form-group">
+        <label class="form-label" for="r_senha">Senha temporária</label>
+        <div class="input-wrapper"><i class="input-icon fa-solid fa-lock"></i>
+          <input id="r_senha" type="password" class="form-input has-toggle" placeholder="Mínimo 8 caracteres">
+          <button type="button" class="toggle-password" id="tr1"><i class="fa-solid fa-eye" id="tri1"></i></button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" data-close="resetModal">Cancelar</button>
+        <button class="btn-primary" id="resetSubmitBtn">Resetar senha</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Confirmação de exclusão -->
+  <div class="modal-overlay" id="deleteModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title">🗑️ Confirmar Exclusão</span>
+        <button class="modal-close" data-close="deleteModal">✕</button>
+      </div>
+      <p style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.5rem;">
+        Deseja excluir permanentemente o usuário:
+      </p>
+      <p style="font-size:1rem;font-weight:600;color:var(--text);margin-bottom:1rem;" id="deleteUserName">—</p>
+      <div class="modal-footer">
+        <button class="btn-secondary" data-close="deleteModal">Cancelar</button>
+        <button class="btn-destructive" id="deleteConfirmBtn">
+          Excluir
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="/static/js/jwt-client.js"></script>
+  <script src="/static/js/admin-users.js"></script>
+</body>
+</html>

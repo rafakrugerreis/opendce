@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>DACE — DC-e {{ dace.numero }}</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 8pt;
+        color: #000;
+        background: #e5e5e5;
+      }
+      .no-print-bar {
+        background: #1e293b;
+        color: #fff;
+        padding: 10px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .no-print-bar button {
+        padding: 8px 16px;
+        background: #0284c7;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      .no-print-bar a {
+        color: #94a3b8;
+        text-decoration: none;
+        font-size: 9pt;
+      }
+      .page-container {
+        width: 210mm;
+        min-height: 297mm;
+        padding: 6mm 8mm;
+        margin: 15px auto;
+        background: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+      }
+
+      .dace-box {
+        border: 1.5px solid #000;
+        margin-bottom: 2px;
+      }
+      .dace-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .dace-table td,
+      .dace-table th {
+        border: 1px solid #000;
+        padding: 2px 4px;
+        vertical-align: top;
+      }
+      .dace-title-box {
+        background: #f0f0f0;
+        font-size: 6.5pt;
+        font-weight: bold;
+        text-align: center;
+        text-transform: uppercase;
+        padding: 2px;
+      }
+      .lbl {
+        font-size: 6pt;
+        color: #222;
+        text-transform: uppercase;
+        font-weight: bold;
+        display: block;
+      }
+      .val {
+        font-size: 7.5pt;
+        font-weight: bold;
+        color: #000;
+      }
+      .center {
+        text-align: center;
+      }
+      .right {
+        text-align: right;
+      }
+      .barcode-svg {
+        max-width: 100%;
+        height: 38px;
+      }
+
+      @media print {
+        body {
+          background: #fff;
+        }
+        .no-print-bar {
+          display: none !important;
+        }
+        .page-container {
+          width: 100%;
+          min-height: auto;
+          margin: 0;
+          padding: 0;
+          box-shadow: none;
+        }
+        @page {
+          size: A4 portrait;
+          margin: 6mm 8mm;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="no-print-bar">
+      <div>
+        <strong
+          >Visualização de Impressão — DACE (Documento Auxiliar da DC-e)</strong
+        >
+      </div>
+      <div style="display: flex; gap: 10px; align-items: center">
+        <a href="/dce/{{ doc.id }}">← Voltar aos Detalhes</a>
+        <button onclick="window.print()">Imprimir DACE</button>
+      </div>
+    </div>
+
+    <div class="page-container">
+      <!-- CABEÇALHO -->
+      <div class="dace-box">
+        <table class="dace-table">
+          <tr>
+            <!-- LOGO E IDENTIFICAÇÃO DACE -->
+            <td
+              style="
+                width: 32%;
+                text-align: center;
+                vertical-align: middle;
+                padding: 4px;
+              "
+            >
+              <img
+                src="/static/images/logo-2.png"
+                alt="Logo"
+                style="max-height: 38px; max-width: 120px; margin-bottom: 3px"
+                onerror="this.style.display = 'none'"
+              /><br />
+              <strong style="font-size: 9pt">DACE</strong><br />
+              <span
+                style="
+                  font-size: 6.5pt;
+                  font-weight: bold;
+                  line-height: 1.1;
+                  display: block;
+                "
+                >DECLARAÇÃO AUXILIAR DE CONTEÚDO ELETRÔNICA</span
+              >
+              <div style="margin-top: 4px; font-size: 8pt; font-weight: bold">
+                Nº {{ dace.numero }}<br />
+                SÉRIE {{ dace.serie }}
+              </div>
+              <div style="font-size: 6.5pt; margin-top: 2px">FOLHA 1 / 1</div>
+            </td>
+
+            <!-- CÓDIGO DE BARRAS E CHAVE -->
+            <td style="width: 68%; padding: 3px">
+              <div style="text-align: center">
+                <svg id="barcode" class="barcode-svg"></svg>
+                <div
+                  style="
+                    font-size: 7.5pt;
+                    font-weight: bold;
+                    letter-spacing: 1px;
+                    font-family: monospace;
+                    margin: 2px 0;
+                  "
+                >
+                  {{ dace.chave[0:4] }} {{ dace.chave[4:8] }} {{
+                  dace.chave[8:12] }} {{ dace.chave[12:16] }} {{
+                  dace.chave[16:20] }} {{ dace.chave[20:24] }} {{
+                  dace.chave[24:28] }} {{ dace.chave[28:32] }} {{
+                  dace.chave[32:36] }} {{ dace.chave[36:40] }} {{
+                  dace.chave[40:44] }}
+                </div>
+              </div>
+              <table class="dace-table" style="margin-top: 3px">
+                <tr>
+                  <td style="width: 50%">
+                    <span class="lbl">DATA DE EMISSÃO</span>
+                    <span class="val">{{ dace.dh_emi }}</span>
+                  </td>
+                  <td style="width: 50%">
+                    <span class="lbl">MODALIDADE DO TRANSPORTE</span>
+                    <span class="val">{{ dace.mod_trans }}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2">
+                    <span class="lbl">PROTOCOLO DE AUTORIZAÇÃO</span>
+                    <span class="val"
+                      >{{ dace.protocolo }}{% if dace.dh_emi %} - {{ dace.dh_emi
+                      }}{% endif %}</span
+                    >
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- REMETENTE -->
+      <div class="dace-box">
+        <div class="dace-title-box">IDENTIFICAÇÃO DO REMETENTE</div>
+        <table class="dace-table">
+          <tr>
+            <td style="width: 32%">
+              <span class="lbl">CNPJ/CPF/IDOUTROS REMETENTE</span>
+              <span class="val">{{ dace.emit_doc }}</span>
+            </td>
+            <td style="width: 68%">
+              <span class="lbl">NOME REMETENTE</span>
+              <span class="val">{{ dace.emit_nome }}</span>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <span class="lbl">CIDADE-UF REMETENTE</span>
+              <span class="val">{{ dace.emit_cidade_uf }}</span>
+            </td>
+            <td>
+              <span class="lbl">ENDEREÇO REMETENTE</span>
+              <span class="val">{{ dace.emit_endereco }}</span>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- DESTINATÁRIO -->
+      <div class="dace-box">
+        <div class="dace-title-box">IDENTIFICAÇÃO DO DESTINATÁRIO</div>
+        <table class="dace-table">
+          <tr>
+            <td style="width: 32%">
+              <span class="lbl">CNPJ/CPF/IDOUTROS DEST.</span>
+              <span class="val">{{ dace.dest_doc }}</span>
+            </td>
+            <td style="width: 68%">
+              <span class="lbl">NOME DESTINATÁRIO</span>
+              <span class="val">{{ dace.dest_nome }}</span>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <span class="lbl">CIDADE-UF DESTINATÁRIO</span>
+              <span class="val">{{ dace.dest_cidade_uf }}</span>
+            </td>
+            <td>
+              <span class="lbl">ENDEREÇO DESTINATÁRIO</span>
+              <span class="val">{{ dace.dest_endereco }}</span>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- TRANSPORTADORA / CORREIOS -->
+      <div class="dace-box">
+        <div class="dace-title-box">
+          IDENTIFICAÇÃO DOS CORREIOS, FISCO, MARKETPLACE ou TRANSPORTADORA
+        </div>
+        <table class="dace-table">
+          <tr>
+            <td style="width: 32%">
+              <span class="lbl">CNPJ ECT/FISCO/MARKET/TRASP</span>
+              <span class="val">{{ dace.transp_cnpj }}</span>
+            </td>
+            <td style="width: 68%">
+              <span class="lbl">NOME ECT/FISCO/MARKETPLACE/TRANSPORTADORA</span>
+              <span class="val">{{ dace.transp_nome }}</span>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- ITENS -->
+      <div class="dace-box">
+        <div class="dace-title-box">IDENTIFICAÇÃO DOS BENS OU MERCADORIAS</div>
+        <table class="dace-table">
+          <thead>
+            <tr style="background: #fafafa; font-size: 7pt">
+              <th style="width: 8%; text-align: center">ITEM</th>
+              <th style="width: 62%; text-align: left">DESCRIÇÃO</th>
+              <th style="width: 12%; text-align: center">QUANTIDADE</th>
+              <th style="width: 18%; text-align: right">VALOR</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for it in dace.itens %}
+            <tr>
+              <td class="center">{{ it.item }}</td>
+              <td>{{ it.descricao }}</td>
+              <td class="center">{{ it.quantidade }}</td>
+              <td class="right">R$ {{ it.valor }}</td>
+            </tr>
+            {% endfor %}
+            <tr style="background: #f9f9f9; font-weight: bold">
+              <td colspan="3" class="right" style="font-size: 8pt">
+                VALOR TOTAL
+              </td>
+              <td class="right" style="font-size: 8pt">
+                R$ {{ dace.valor_total }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- DADOS ADICIONAIS -->
+      <div class="dace-box">
+        <div class="dace-title-box">DADOS ADICIONAIS</div>
+        <table class="dace-table">
+          <tr>
+            <td style="width: 50%; min-height: 60px">
+              <span class="lbl">INFORMAÇÕES COMPLEMENTARES</span>
+              <div style="font-size: 7pt; line-height: 1.2; margin-top: 2px">
+                {{ dace.inf_cpl or 'EMITIDA POR REPRESENTANTE LEGAL ASSOCIAÇÃO
+                HOSPITAL DE CARIDADE IJUI HCI CNPJ 90730508000138.' }}
+              </div>
+            </td>
+            <td style="width: 50%">
+              <span class="lbl">INFORMAÇÕES ADICIONAIS DO FISCO</span>
+              <div style="font-size: 7pt; color: #555; margin-top: 2px">—</div>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- QR CODE E OBSERVAÇÕES LEGAIS -->
+      <div class="dace-box">
+        <table class="dace-table">
+          <tr>
+            <td
+              style="
+                width: 110px;
+                text-align: center;
+                vertical-align: middle;
+                padding: 4px;
+              "
+            >
+              <span class="lbl" style="margin-bottom: 2px">QR-CODE</span>
+              <div
+                id="qrcode"
+                style="
+                  display: flex;
+                  justify-content: center;
+                  align-items: center;
+                "
+              ></div>
+            </td>
+            <td style="vertical-align: top; padding: 4px">
+              <div class="dace-title-box" style="margin-bottom: 3px">
+                OBSERVAÇÕES
+              </div>
+              <p
+                style="
+                  font-size: 6pt;
+                  line-height: 1.2;
+                  text-align: justify;
+                  margin-bottom: 3px;
+                "
+              >
+                É contribuinte de ICMS qualquer pessoa física ou jurídica, que
+                realize, com habitualidade ou em volume que caracterize intuito
+                comercial, operações de circulação de mercadoria ou prestações
+                de serviços de transportes interestadual e intermunicipal e de
+                comunicação, ainda que as operações e prestações se iniciem no
+                exterior, conforme art. 4º da Lei Complementar nº 87/96.
+              </p>
+              <p style="font-size: 6pt; line-height: 1.2; text-align: justify">
+                Constitui crime contra a ordem tributária suprimir ou reduzir
+                tributo, ou contribuição social e qualquer acessório: quando
+                negar ou deixar de fornecer, quando obrigatório, nota fiscal ou
+                documento equivalente, relativa a venda de mercadoria ou
+                prestação de serviço, efetivamente realizada ou fornecê-la em
+                desacordo com a legislação, sob pena de reclusão de dois a cinco
+                anos, e multa, conforme inciso V do art. 1º da Lei nº 8.137/90.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const chave = "{{ dace.chave }}";
+        if (chave && document.getElementById("barcode")) {
+          JsBarcode("#barcode", chave, {
+            format: "CODE128",
+            displayValue: false,
+            margin: 0,
+            height: 38,
+            width: 1.4,
+          });
+        }
+
+        const qrUrl =
+          "{{ dace.qrcode_url }}" ||
+          `https://www.fazenda.pr.gov.br/dce/qrcode?chDCe=${chave}&tpAmb=2`;
+        if (document.getElementById("qrcode")) {
+          new QRCode(document.getElementById("qrcode"), {
+            text: qrUrl,
+            width: 96,
+            height: 96,
+            correctLevel: QRCode.CorrectLevel.M,
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: opendce_db
+    restart: always
+    environment:
+      - POSTGRES_USER=opendce
+      - POSTGRES_PASSWORD=opendce
+      - POSTGRES_DB=opendce
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ghcr.io/hci-dev-ti/opendce:latest
+    container_name: opendce_app
+    restart: always
+    ports:
+      - "7777:7777"
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - TZ=America/Sao_Paulo
+      - DATABASE_URL=postgresql+psycopg://opendce:opendce@db:5432/opendce
+    volumes:
+      - ./data:/app/data
+      - ./certs:/app/certs:ro
+    depends_on:
+      - db
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  pgdata:

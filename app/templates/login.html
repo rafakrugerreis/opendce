@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login — Opendce</title>
+    <meta
+      name="description"
+      content="Acesso ao sistema de Declaração de Conteúdo Eletrônica Opendce."
+    />
+    <link rel="icon" type="image/png" href="/static/images/favicon.png" />
+    <link rel="stylesheet" href="/static/css/auth.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <div class="auth-bg">
+      <div class="auth-blob"></div>
+      <div class="auth-blob"></div>
+      <div class="auth-blob"></div>
+    </div>
+
+    <div class="auth-card">
+      <div class="auth-logo">
+        <img
+          src="/static/images/logo.png"
+          alt="Opendce"
+          style="
+            height: 160px;
+            width: auto;
+            max-width: 640px;
+            object-fit: contain;
+            margin-bottom: 0.5rem;
+          "
+        />
+        <p>Sistema de Declaração de Conteúdo Eletrônica</p>
+      </div>
+
+      {% if error %}
+      <div class="alert-error" role="alert">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span>{{ error }}</span>
+      </div>
+      {% endif %}
+
+      <form id="loginForm" method="POST" action="/login" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="cracha">Crachá</label>
+          <div class="input-wrapper">
+            <i class="input-icon fa-solid fa-id-badge"></i>
+            <input
+              id="cracha"
+              name="cracha"
+              type="text"
+              class="form-input"
+              placeholder="Número do crachá ou nome"
+              autocomplete="username"
+              required
+              autofocus
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="senha">Senha</label>
+          <div class="input-wrapper">
+            <i class="input-icon fa-solid fa-lock"></i>
+            <input
+              id="senha"
+              name="senha"
+              type="password"
+              class="form-input has-toggle"
+              placeholder="Sua senha"
+              autocomplete="current-password"
+              required
+            />
+            <button
+              type="button"
+              class="toggle-password"
+              id="toggleSenha"
+              aria-label="Mostrar senha"
+            >
+              <i class="fa-solid fa-eye" id="toggleIcon"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary" id="submitBtn">
+          <span id="btnText">Entrar</span>
+        </button>
+      </form>
+    </div>
+
+    <script>
+      const toggleSenha = document.getElementById("toggleSenha");
+      const senhaInput = document.getElementById("senha");
+      const toggleIcon = document.getElementById("toggleIcon");
+      toggleSenha.addEventListener("click", () => {
+        const isPass = senhaInput.type === "password";
+        senhaInput.type = isPass ? "text" : "password";
+        toggleIcon.className = isPass
+          ? "fa-solid fa-eye-slash"
+          : "fa-solid fa-eye";
+      });
+
+      document.getElementById("loginForm").addEventListener("submit", () => {
+        const btn = document.getElementById("submitBtn");
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span>Entrando…';
+      });
+    </script>
+  </body>
+</html>

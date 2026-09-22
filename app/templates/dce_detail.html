@@ -1,0 +1,280 @@
+{% extends "base.html" %} {% block title %}DC-e {{ "%09d" % doc.numero if doc
+else 'N/A' }} — Opendce{% endblock %} {% block content %} {% if not doc %}
+<div
+  class="card max-w-xl mx-auto p-xl text-center space-y-md"
+>
+  <span class="material-symbols-outlined text-[48px] text-destructive">destructive</span>
+  <h1
+    class="font-display-lg text-2xl font-bold text-foreground"
+  >
+    Documento não encontrado
+  </h1>
+  <p class="text-sm text-muted-foreground">
+    A DC-e solicitada não existe ou foi removida do banco de dados.
+  </p>
+  <a
+    href="/"
+    class="btn btn-primary"
+  >
+    <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+    <span>Voltar ao Painel</span>
+  </a>
+</div>
+{% else %}
+
+<div class="max-w-5xl mx-auto space-y-lg">
+  <!-- Breadcrumb & Back -->
+  <div class="flex items-center justify-between">
+    <a
+      href="/"
+      class="inline-flex items-center gap-xs text-sm font-semibold text-primary hover:underline"
+    >
+      <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+      <span>Voltar ao Painel Geral</span>
+    </a>
+
+    <div class="flex items-center gap-xs">
+      <a
+        href="/dce/{{ doc.id }}/dace"
+        target="_blank"
+        class="btn btn-primary btn-sm"
+      >
+        <span class="material-symbols-outlined text-[16px]">print</span>
+        <span>Imprimir</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Header Card -->
+  <div
+    class="card p-lg shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-md"
+  >
+    <div class="space-y-1">
+      <div class="flex items-center gap-sm">
+        <h1
+          class="font-display-lg text-2xl md:text-3xl font-bold text-foreground"
+        >
+          DC-e
+          <span class="font-data-mono text-primary"
+            >№ {{ "%09d" % doc.numero }}</span
+          >
+        </h1>
+        <span
+          class="badge badge-secondary font-data-mono"
+          >Série {{ "%03d" % doc.serie }}</span
+        >
+      </div>
+      <p class="text-xs text-muted-foreground">
+        Emitido em {{ doc.criado_em.strftime('%d/%m/%Y às %H:%M:%S') }}{% if
+        doc.usuario %} por
+        <strong class="text-foreground"
+          >{{ doc.usuario }}</strong
+        >{% endif %} · Modelo 99 · SVRS/PR
+      </p>
+    </div>
+
+    <!-- Status Badge -->
+    <div>
+      {% if doc.status == 'AUTORIZADA' %}
+      <span
+        class="badge badge-success"
+      >
+        <span class="material-symbols-outlined text-[18px]">check_circle</span>
+        Autorizada pela SEFAZ
+      </span>
+      {% elif doc.status == 'ASSINADA' %}
+      <span
+        class="badge badge-warning"
+      >
+        <span class="material-symbols-outlined text-[18px]">draw</span> Assinada
+        (Pronta para Envio)
+      </span>
+      {% elif doc.status == 'REJEITADA' %}
+      <span
+        class="badge badge-destructive"
+      >
+        <span class="material-symbols-outlined text-[18px]">cancel</span>
+        Rejeitada
+      </span>
+      {% elif doc.status == 'ERRO_TRANSMISSAO' %}
+      <span
+        class="badge badge-warning"
+      >
+        <span class="material-symbols-outlined text-[18px]">warning</span> Erro
+        de Transmissão
+      </span>
+      {% else %}
+      <span
+        class="badge badge-default"
+      >
+        <span class="material-symbols-outlined text-[18px]">note_add</span> {{
+        doc.status }}
+      </span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Bento Details Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-12 gap-md">
+    <!-- Chave de Acesso Card -->
+    <div
+      class="card md:col-span-12 p-lg"
+    >
+      <span
+        class="label label-muted uppercase tracking-wider mb-xs"
+        >Chave de Acesso (44 Dígitos)</span
+      >
+      <div
+        class="card p-md flex flex-col sm:flex-row sm:items-center justify-between gap-md"
+      >
+        <p
+          class="font-data-mono text-sm md:text-base font-bold tracking-wider text-foreground select-all"
+        >
+          {{ doc.chave[0:4] }} {{ doc.chave[4:8] }} {{ doc.chave[8:12] }} {{
+          doc.chave[12:16] }} {{ doc.chave[16:20] }} {{ doc.chave[20:24] }} {{
+          doc.chave[24:28] }} {{ doc.chave[28:32] }} {{ doc.chave[32:36] }} {{
+          doc.chave[36:40] }} {{ doc.chave[40:44] }}
+        </p>
+        <button
+          class="btn btn-primary btn-sm shrink-0"
+          onclick="copyChave('{{ doc.chave }}')"
+        >
+          <span class="material-symbols-outlined text-[16px]"
+            >content_copy</span
+          >
+          <span>Copiar Chave</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- SEFAZ / Fiscal Info Card -->
+    <div
+      class="card md:col-span-6 p-lg space-y-sm"
+    >
+      <h2
+        class="font-display-lg text-base font-bold text-foreground flex items-center gap-xs border-b border-border/40 pb-sm"
+      >
+        <span class="material-symbols-outlined text-primary">gavel</span>
+        <span>Retorno e Protocolo SEFAZ</span>
+      </h2>
+      <div class="grid grid-cols-2 gap-sm text-sm pt-xs">
+        <div>
+          <span class="text-xs text-border block">Código cStat</span>
+          <span class="font-data-mono font-bold text-foreground"
+            >{{ doc.c_stat or '—' }}</span
+          >
+        </div>
+        <div>
+          <span class="text-xs text-border block"
+            >Nº do Protocolo</span
+          >
+          <span class="font-data-mono font-bold text-foreground"
+            >{{ doc.protocolo or '—' }}</span
+          >
+        </div>
+        <div class="col-span-2">
+          <span class="text-xs text-border block"
+            >Mensagem / Motivo</span
+          >
+          <span class="text-foreground font-medium"
+            >{{ doc.motivo or 'Aguardando processamento ou transmissão.'
+            }}</span
+          >
+        </div>
+        {% if doc.transmitido_em %}
+        <div class="col-span-2">
+          <span class="text-xs text-border block"
+            >Data/Hora da Transmissão</span
+          >
+          <span class="text-foreground"
+            >{{ doc.transmitido_em.strftime('%d/%m/%Y às %H:%M:%S') }}</span
+          >
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Actions Card -->
+    <div
+      class="card md:col-span-6 p-lg flex flex-col justify-between space-y-md"
+    >
+      <div>
+        <h2
+          class="font-display-lg text-base font-bold text-foreground flex items-center gap-xs border-b border-border/40 pb-sm"
+        >
+          <span class="material-symbols-outlined text-primary">bolt</span>
+          <span>Ações do Documento</span>
+        </h2>
+        <p class="text-xs text-muted-foreground mt-2">
+          Execute a transmissão assíncrona ou consulte o estado atualizado
+          diretamente no WebService da SEFAZ.
+        </p>
+      </div>
+
+      <div class="flex flex-wrap gap-sm pt-sm">
+        {% if doc.status == 'ASSINADA' %}
+        <button
+          class="btn btn-primary flex-1"
+          onclick="transmitir({{ doc.id }})"
+          id="btn-transmit-detail"
+        >
+          <span class="material-symbols-outlined text-[20px]">send</span>
+          <span>Transmitir para SEFAZ</span>
+        </button>
+        {% endif %} {% if doc.status in ['AUTORIZADA', 'REJEITADA',
+        'ERRO_TRANSMISSAO'] %}
+        <button
+          class="btn btn-outline flex-1"
+          onclick="consultarDoc({{ doc.id }})"
+          id="btn-consultar-detail"
+        >
+          <span class="material-symbols-outlined text-[20px]">search</span>
+          <span>Consultar SEFAZ</span>
+        </button>
+        {% endif %} {% if doc.xml_assinado %}
+        <a
+          href="/dce/{{ doc.id }}/dace"
+          target="_blank"
+          class="btn btn-primary"
+        >
+          <span class="material-symbols-outlined text-[20px]">print</span>
+          <span>Imprimir</span>
+        </a>
+        <a
+          href="/api/dce/{{ doc.id }}/download"
+          class="btn btn-outline"
+        >
+          <span class="material-symbols-outlined text-[20px]">download</span>
+          <span>Baixar XML</span>
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- XML Preview Collapsible -->
+  {% if doc.xml_assinado %}
+  <div
+    class="card p-lg shadow-sm"
+  >
+    <details class="group">
+      <summary
+        class="cursor-pointer font-display-lg text-base font-bold text-foreground flex items-center justify-between select-none"
+      >
+        <span class="flex items-center gap-xs">
+          <span class="material-symbols-outlined text-primary">code</span>
+          <span>Estrutura do XML Assinado (Modelo 99)</span>
+        </span>
+        <span
+          class="material-symbols-outlined group-open:rotate-180 transition-transform"
+          >expand_more</span
+        >
+      </summary>
+      <div class="mt-md">
+        <pre class="xml-pre">{{ doc.xml_assinado }}</pre>
+      </div>
+    </details>
+  </div>
+  {% endif %}
+</div>
+{% endif %} {% endblock %}
