@@ -25,7 +25,7 @@ class StatusDCe(StrEnum):
 
 
 class DceDocument(Base):
-    __tablename__ = "nhci_doc_dce"
+    __tablename__ = "notas"
 
     id: Mapped[int] = mapped_column(
         Integer,
